@@ -1,5 +1,6 @@
 import fs from 'fs'
 import path from 'path'
+import { randomUUID } from 'crypto'
 
 // middlewares
 import morgan from 'morgan'
@@ -7,9 +8,13 @@ import parser from 'body-parser'
 import cors from 'cors'
 
 import express from 'express'
-import { uuid } from 'uuidv4'
 
-import { ReadBookSchema, CreateBookSchema } from './book.schema.js'
+import {
+  CreateBookSchema,
+  ReadBookSchema,
+  UpdateBookSchema,
+  DeleteBookSchema
+} from './book.schema.js'
 import __dirname from './dirname.js'
 
 const app = express()
@@ -50,16 +55,31 @@ app.get('/books', (_, res) => {
 })
 
 app.get('/books/:id', validate(ReadBookSchema), (req, res) => {
-  let book = books[req.params.id]
+  const book = books[req.params.id]
 
   !!book ? res.send(book) : res.status(204).send()
 })
 
+app.put('/books/:id', validate(UpdateBookSchema), (req, res) => {
+  const id = req.params.id
+  const updatedBook = { ...books[id], ...req.body }
+
+  books[id] = updatedBook
+
+  res.send(200).send()
+})
+
 app.post('/books', validate(CreateBookSchema), (req, res) => {
-  const id = uuid()
+  const id = randomUUID()
   books[id] = { id, ...req.body }
 
   res.status(201).send({ id })
+})
+
+app.delete('/books/:id', validate(DeleteBookSchema), (req, res) => {
+  delete books[req.params.id]
+
+  res.status(200).send()
 })
 
 app.listen(port, () => {
